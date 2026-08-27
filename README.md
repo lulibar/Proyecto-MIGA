@@ -1,4 +1,4 @@
-# RecetApp
+# MIGA
 
 Aplicación web (PWA) para explorar recetas de cocina, desarrollada como Trabajo Integrador de Aplicaciones Móviles.
 
