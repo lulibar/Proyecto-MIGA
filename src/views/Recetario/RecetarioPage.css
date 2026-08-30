@@ -1,0 +1,76 @@
+.recetario-page {
+  padding-bottom: 20px;
+}
+
+.recetario-count {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 16px;
+}
+
+.recetario-count svg {
+  color: var(--color-terracota);
+}
+
+.recetario-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding-bottom: 16px;
+}
+
+.recetario-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.recetario-empty-icon {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: var(--color-terracota-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-terracota);
+}
+
+.recetario-empty-title {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.recetario-empty-subtitle {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  max-width: 320px;
+}
+
+@media (min-width: 481px) {
+  .recetario-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 768px) {
+  .recetario-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .recetario-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

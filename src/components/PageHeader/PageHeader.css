@@ -1,0 +1,35 @@
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 28px 0 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header-text {
+  flex: 1;
+}
+
+.page-header-title {
+  font-family: var(--font-serif);
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+}
+
+.page-header-subtitle {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  margin-top: 8px;
+  line-height: 1.5;
+  max-width: 480px;
+}
+
+.page-header-deco {
+  flex-shrink: 0;
+  margin-left: 12px;
+  opacity: 0.85;
+}
