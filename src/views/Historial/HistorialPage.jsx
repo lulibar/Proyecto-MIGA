@@ -2,22 +2,33 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./HistorialPage.css";
 import PageHeader from "../../components/PageHeader/PageHeader";
-import { historialItems } from "../../data/mockData";
+import { getHistory, clearHistory } from "../../utils/storage";
 
 function categoryColor(category) {
-  if (category === "Postre") return { bg: "#FEF6E0", color: "#B8860B" };
-  if (category === "Ensalada") return { bg: "#EEF4E8", color: "#4A6741" };
+  if (category === "Dessert") return { bg: "#FEF6E0", color: "#B8860B" };
+  if (category === "Vegetarian" || category === "Vegan") return { bg: "#EEF4E8", color: "#4A6741" };
   return { bg: "#FCEEE9", color: "#C65D3A" };
 }
 
-const groups = ["Hoy", "Ayer", "Esta semana"];
+function formatearFecha(isoString) {
+  const fecha = new Date(isoString);
+  return fecha.toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }) + " " + fecha.toLocaleTimeString("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default function HistorialPage() {
   const navigate = useNavigate();
-  const [items, setItems] = useState(historialItems);
+  const [items, setItems] = useState(getHistory());
 
-  function clearHistorial() {
-    setItems([]);
+  function handleClear() {
+    const vacio = clearHistory();
+    setItems(vacio);
   }
 
   return (
@@ -34,7 +45,7 @@ export default function HistorialPage() {
               <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
             </svg>
             <p>El historial se guarda automáticamente para que vuelvas a lo que te inspiró.</p>
-            <button className="historial-clear-btn" onClick={clearHistorial}>
+            <button className="historial-clear-btn" onClick={handleClear}>
               Limpiar historial
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="3 6 5 6 21 6" />
@@ -55,52 +66,50 @@ export default function HistorialPage() {
             <p className="historial-empty-subtitle">Las recetas que visites aparecerán aquí.</p>
           </div>
         ) : (
-          groups.map((group) => {
-            const groupItems = items.filter((i) => i.group === group);
-            if (groupItems.length === 0) return null;
-            return (
-              <section key={group} className="historial-group" aria-labelledby={`group-${group}`}>
-                <h2 className="historial-group-title" id={`group-${group}`}>{group}</h2>
-                <ul className="historial-list">
-                  {groupItems.map((item) => {
-                    const catStyle = categoryColor(item.recipe.category);
-                    return (
-                      <li key={item.recipe.id}>
-                        <article
-                          className="historial-item"
-                          onClick={() => navigate(`/detalle/${item.recipe.id}`)}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => e.key === "Enter" && navigate(`/detalle/${item.recipe.id}`)}
-                          aria-label={`Ver receta: ${item.recipe.title}`}
-                        >
-                          <div className="historial-item-img">
-                            <img src={item.recipe.image} alt={`Foto de ${item.recipe.title}`} loading="lazy" />
-                          </div>
-                          <div className="historial-item-body">
-                            <h3 className="historial-item-title">{item.recipe.title}</h3>
-                            <div className="historial-item-badges">
-                              <span className="badge badge--origin">{item.recipe.origin}</span>
-                              <span className="badge" style={{ background: catStyle.bg, color: catStyle.color }}>{item.recipe.category}</span>
-                            </div>
-                            <p className="historial-item-time">
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                              </svg>
-                              <span>{item.viewedAt}</span>
-                            </p>
-                          </div>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="historial-item-arrow" aria-hidden="true">
-                            <polyline points="9 18 15 12 9 6" />
+          <section aria-labelledby="historial-heading">
+            <h2 className="historial-group-title" id="historial-heading" style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden" }}>
+              Recetas visitadas
+            </h2>
+            <ul className="historial-list">
+              {items.map((item) => {
+                const catStyle = categoryColor(item.strCategory);
+                return (
+                  <li key={item.idMeal}>
+                    <article
+                      className="historial-item"
+                      onClick={() => navigate(`/detalle/${item.idMeal}`)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === "Enter" && navigate(`/detalle/${item.idMeal}`)}
+                      aria-label={`Ver receta: ${item.strMeal}`}
+                    >
+                      <div className="historial-item-img">
+                        <img src={item.strMealThumb} alt={`Foto de ${item.strMeal}`} loading="lazy" />
+                      </div>
+                      <div className="historial-item-body">
+                        <h3 className="historial-item-title">{item.strMeal}</h3>
+                        <div className="historial-item-badges">
+                          {item.strArea && <span className="badge badge--origin">{item.strArea}</span>}
+                          {item.strCategory && (
+                            <span className="badge" style={{ background: catStyle.bg, color: catStyle.color }}>{item.strCategory}</span>
+                          )}
+                        </div>
+                        <p className="historial-item-time">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                           </svg>
-                        </article>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            );
-          })
+                          <span>{formatearFecha(item.fechaVisita)}</span>
+                        </p>
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="historial-item-arrow" aria-hidden="true">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </article>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
         )}
       </div>
     </div>

@@ -18,6 +18,8 @@ export function addToWishlist(meal, formData) {
         idMeal: meal.idMeal,
         strMeal: meal.strMeal,
         strMealThumb: meal.strMealThumb,
+        strCategory: meal.strCategory,
+        strArea: meal.strArea,
         consulta: formData, // acá van nombre, email y mensaje del formulario
         fechaAgregado: new Date().toISOString(),
     };
@@ -54,9 +56,17 @@ export function addToHistory(meal) {
         idMeal: meal.idMeal,
         strMeal: meal.strMeal,
         strMealThumb: meal.strMealThumb,
+        strCategory: meal.strCategory,
+        strArea: meal.strArea,
         fechaVisita: new Date().toISOString(),
     });
 
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
     return history;
+}
+
+// Borra el historial completo.
+export function clearHistory() {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify([]));
+    return [];
 }

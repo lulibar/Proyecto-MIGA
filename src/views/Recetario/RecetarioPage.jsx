@@ -3,25 +3,29 @@ import { useNavigate } from "react-router-dom";
 import "./RecetarioPage.css";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import RecipeCard from "../../components/RecipeCard/RecipeCard";
-import { recipes } from "../../data/mockData";
+import { getWishlist, removeFromWishlist } from "../../utils/storage";
+
+function mapWishlistItem(item) {
+  return {
+    id: item.idMeal,
+    title: item.strMeal,
+    image: item.strMealThumb,
+    category: item.strCategory,
+    origin: item.strArea,
+    isFavorite: true,
+  };
+}
 
 export default function RecetarioPage() {
   const navigate = useNavigate();
-  const [favorites, setFavorites] = useState(
-    new Set(recipes.filter((r) => r.isFavorite).map((r) => r.id))
-  );
+  const [wishlist, setWishlist] = useState(getWishlist());
 
-  function toggleFavorite(id) {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  function handleRemove(id) {
+    const actualizado = removeFromWishlist(id);
+    setWishlist(actualizado);
   }
 
-  const saved = recipes
-    .filter((r) => favorites.has(r.id))
-    .map((r) => ({ ...r, isFavorite: true }));
+  const saved = wishlist.map(mapWishlistItem);
 
   return (
     <div className="recetario-page">
@@ -45,7 +49,7 @@ export default function RecetarioPage() {
                   key={recipe.id}
                   recipe={recipe}
                   variant="grid"
-                  onFavoriteToggle={toggleFavorite}
+                  onFavoriteToggle={handleRemove}
                   onClick={(r) => navigate(`/detalle/${r.id}`)}
                 />
               ))}
