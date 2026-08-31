@@ -1,47 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./HomePage.css";
 import RecipeCard from "../../components/RecipeCard/RecipeCard";
-import { recipes, categories } from "../../data/mockData";
-
-const categoryIcons = {
-  clock: (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-    </svg>
-  ),
-  leaf: (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 20A7 7 0 0118 7a7 7 0 01-7 13z" /><path d="M11 20c0-5.523 4.477-10 10-10" />
-    </svg>
-  ),
-  globe: (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" />
-      <path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" />
-    </svg>
-  ),
-  cake: (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-8a2 2 0 00-2-2H6a2 2 0 00-2 2v8" />
-      <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2 1 2 1" />
-      <path d="M2 21h20" /><path d="M7 8v3" /><path d="M12 8v3" /><path d="M17 8v3" />
-      <path d="M7 4l-.5 2h9L15 4" />
-    </svg>
-  ),
-  "heart-pulse": (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.42 4.58a5.4 5.4 0 00-7.65 0l-.77.78-.77-.78a5.4 5.4 0 00-7.65 7.65l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.4 5.4 0 00-.42-8.81z" />
-      <polyline points="7 13 9.5 9 11.5 13 13 11 15.5 14" />
-    </svg>
-  ),
-  grid: (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
-      <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
-    </svg>
-  ),
-};
+import { getRandomMeals, getCategories } from "../../services/api";
+import { getWishlist, addToWishlist, removeFromWishlist } from "../../utils/storage";
 
 const heroSlides = [
   {
@@ -64,42 +26,90 @@ const heroSlides = [
   },
 ];
 
-export default function HomePage() {
+function mapMeal(meal, favoritesIds) {
+  return {
+    id: meal.idMeal,
+    title: meal.strMeal,
+    image: meal.strMealThumb,
+    category: meal.strCategory,
+    origin: meal.strArea,
+    isFavorite: favoritesIds.has(meal.idMeal),
+  };
+}
+
+export default function Home() {
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [favorites, setFavorites] = useState(
-    new Set(recipes.filter((r) => r.isFavorite).map((r) => r.id))
-  );
+  const [featuredMeals, setFeaturedMeals] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [favorites, setFavorites] = useState(new Set());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const wishlistIds = new Set(getWishlist().map((item) => item.idMeal));
+    setFavorites(wishlistIds);
+
+    Promise.all([getRandomMeals(4), getCategories()])
+      .then(([meals, cats]) => {
+        setFeaturedMeals(meals);
+        setCategories(cats.slice(0, 6));
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
+
+    useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   function toggleFavorite(id) {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+    const meal = featuredMeals.find((m) => m.idMeal === id);
+    if (!meal) return;
+
+    if (favorites.has(id)) {
+      removeFromWishlist(id);
+      setFavorites((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    } else {
+      addToWishlist(meal, {});
+      setFavorites((prev) => new Set(prev).add(id));
+    }
   }
 
-  const featuredRecipes = recipes.slice(0, 4).map((r) => ({ ...r, isFavorite: favorites.has(r.id) }));
+  const featuredRecipes = featuredMeals.map((m) => mapMeal(m, favorites));
   const slide = heroSlides[currentSlide];
 
   return (
     <>
-      {/* Hero banner */}
+            {/* Hero banner */}
       <section className="hero" aria-label="Receta destacada">
         <div className="hero-img-wrap">
           <img src={slide.image} alt="Plato de receta destacada" className="hero-img" />
           <div className="hero-overlay" aria-hidden="true" />
         </div>
-        <div className="hero-content">
-          <span className="hero-badge">{slide.badge}</span>
-          <h2 className="hero-title">{slide.title}</h2>
-          <p className="hero-subtitle">{slide.subtitle}</p>
-          <button className="hero-cta" onClick={() => navigate("/busqueda")}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            Buscar recetas
-          </button>
+        <div className="container">
+          <div className="hero-content">
+            <span className="hero-badge">{slide.badge}</span>
+            <h2 className="hero-title">{slide.title}</h2>
+            <p className="hero-subtitle">{slide.subtitle}</p>
+            <button className="hero-cta" onClick={() => navigate("/busqueda")}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              Buscar recetas
+            </button>
+          </div>
         </div>
         <div className="hero-dots" role="tablist" aria-label="Slides del banner">
           {heroSlides.map((_, i) => (
@@ -127,11 +137,17 @@ export default function HomePage() {
               </svg>
             </button>
           </div>
+
+          {loading && <p>Cargando categorías...</p>}
+          {error && <p role="status">No pudimos cargar las categorías: {error}</p>}
+
           <div className="category-grid">
             {categories.map((cat) => (
-              <button key={cat.id} className="category-chip" onClick={() => navigate("/busqueda")}>
-                <span className="category-chip-icon">{categoryIcons[cat.icon]}</span>
-                <span className="category-chip-label">{cat.label}</span>
+              <button key={cat.idCategory} className="category-chip" onClick={() => navigate(`/busqueda?categoria=${encodeURIComponent(cat.strCategory)}`)}>
+                <span className="category-chip-icon">
+                  <img src={cat.strCategoryThumb} alt="" width="26" height="26" style={{ borderRadius: "50%", objectFit: "cover" }} />
+                </span>
+                <span className="category-chip-label">{cat.strCategory}</span>
               </button>
             ))}
           </div>
@@ -150,14 +166,16 @@ export default function HomePage() {
               </svg>
             </button>
           </div>
-        </div>
-        <div className="cards-scroll-wrap">
-          <div className="cards-scroll container">
+
+          {loading && <p>Cargando recetas...</p>}
+          {error && !loading && <p role="status">No pudimos cargar las recetas: {error}</p>}
+
+          <div className="featured-grid">
             {featuredRecipes.map((recipe) => (
               <RecipeCard
                 key={recipe.id}
                 recipe={recipe}
-                variant="compact"
+                variant="grid"
                 onFavoriteToggle={toggleFavorite}
                 onClick={(r) => navigate(`/detalle/${r.id}`)}
               />
