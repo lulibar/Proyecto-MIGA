@@ -47,12 +47,16 @@ export default function RecipeCard({ recipe, variant = "grid", onFavoriteToggle,
           <h3 className="recipe-card-list-title">{recipe.title}</h3>
           <div className="recipe-card-badges">
             <span className="badge badge--origin">{recipe.origin}</span>
-            <span className="badge" style={{ background: catStyle.bg, color: catStyle.color }}>{recipe.category}</span>
-          </div>
+              {recipe.category && (
+                <span className="badge" style={{ background: catStyle.bg, color: catStyle.color }}>{recipe.category}</span>
+              )}          
+            </div>
+          {(recipe.time || recipe.difficulty) && (
           <div className="recipe-card-meta">
-            <span className="recipe-meta-item"><ClockIcon /> {recipe.time} min</span>
-            <span className="recipe-meta-item"><DifficultyIcon /> {recipe.difficulty}</span>
+            {recipe.time && <span className="recipe-meta-item"><ClockIcon /> {recipe.time} min</span>}
+            {recipe.difficulty && <span className="recipe-meta-item"><DifficultyIcon /> {recipe.difficulty}</span>}
           </div>
+        )}
         </div>
         <svg className="recipe-card-list-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="9 18 15 12 9 6" />
@@ -77,12 +81,16 @@ export default function RecipeCard({ recipe, variant = "grid", onFavoriteToggle,
         <h3 className="recipe-card-title">{recipe.title}</h3>
         <p className="recipe-card-origin">{recipe.origin}</p>
         <div className="recipe-card-badges">
-          <span className="badge" style={{ background: catStyle.bg, color: catStyle.color }}>{recipe.category}</span>
+          {recipe.category && (
+            <span className="badge" style={{ background: catStyle.bg, color: catStyle.color }}>{recipe.category}</span>
+          )}       
         </div>
-        <div className="recipe-card-meta">
-          <span className="recipe-meta-item"><ClockIcon /> {recipe.time} min</span>
-          <span className="recipe-meta-item"><DifficultyIcon /> {recipe.difficulty}</span>
-        </div>
+          {(recipe.time || recipe.difficulty) && (
+          <div className="recipe-card-meta">
+            {recipe.time && <span className="recipe-meta-item"><ClockIcon /> {recipe.time} min</span>}
+            {recipe.difficulty && <span className="recipe-meta-item"><DifficultyIcon /> {recipe.difficulty}</span>}
+          </div>
+        )}
       </div>
     </article>
   );
