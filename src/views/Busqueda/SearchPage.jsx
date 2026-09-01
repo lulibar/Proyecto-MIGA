@@ -10,10 +10,37 @@ import {
   filterMealsByIngredient,
   getCategories,
   getAreas,
+  getRandomMeals,
 } from "../../services/api";
 import { getWishlist, addToWishlist, removeFromWishlist } from "../../utils/storage";
 
 const PAGE_SIZE = 10;
+
+// Saca duplicados de una lista de strings.
+function quitarDuplicados(lista) {
+  return [...new Set(lista)];
+}
+
+// Arma un diccionario de alias automático: para cada gentilicio (strArea),
+// guarda el/los nombre/s real/es de país (strCountry) que lo comparten.
+// Esto cubre TODOS los países sin que tengamos que anotarlos a mano uno por uno.
+function construirAliasDeAreas(areas) {
+  const mapa = {};
+
+  areas.forEach(({ strArea, strCountry }) => {
+    if (!strArea || !strCountry) return;
+    if (!mapa[strArea]) mapa[strArea] = new Set();
+    if (strCountry !== strArea) {
+      mapa[strArea].add(strCountry);
+    }
+  });
+
+  const resultado = {};
+  Object.entries(mapa).forEach(([area, countries]) => {
+    resultado[area] = [...countries];
+  });
+  return resultado;
+}
 
 function SelectFilter({ label, icon, options, value, onChange }) {
   return (
@@ -54,13 +81,16 @@ export default function SearchPage() {
 
   const [categoryOptions, setCategoryOptions] = useState(["Todas"]);
   const [originOptions, setOriginOptions] = useState(["Todos"]);
+  const [areaAliases, setAreaAliases] = useState({});
 
-  const [results, setResults] = useState([]);
+    const [results, setResults] = useState([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [favorites, setFavorites] = useState(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searched, setSearched] = useState(false);
+  const [randomMeals, setRandomMeals] = useState([]);
+  const [loadingRandom, setLoadingRandom] = useState(true);
 
     useEffect(() => {
     setFavorites(new Set(getWishlist().map((item) => item.idMeal)));
@@ -69,17 +99,28 @@ export default function SearchPage() {
 
     Promise.all([getCategories(), getAreas()])
       .then(([cats, areas]) => {
-        setCategoryOptions(["Todas", ...cats.map((c) => c.strCategory)]);
-        setOriginOptions(["Todos", ...areas.map((a) => a.strArea)]);
+        const catNames = quitarDuplicados(cats.map((c) => c.strCategory));
+        const areaNames = quitarDuplicados(areas.map((a) => a.strArea));
+
+        setCategoryOptions(["Todas", ...catNames]);
+        setOriginOptions(["Todos", ...areaNames]);
+        setAreaAliases(construirAliasDeAreas(areas));
 
         if (categoriaDesdeUrl) {
           setCategory(categoriaDesdeUrl);
         }
       })
       .catch((err) => setError(err.message));
+
+    getRandomMeals(10)
+      .then((meals) => {
+        setRandomMeals(meals);
+        setLoadingRandom(false);
+      })
+      .catch(() => setLoadingRandom(false));
   }, [searchParams]);
 
-    useEffect(() => {
+  useEffect(() => {
     const hayAlgunFiltro = query.trim() || ingredient.trim() || category !== "Todas" || origin !== "Todos";
 
     if (!hayAlgunFiltro) {
@@ -94,8 +135,7 @@ export default function SearchPage() {
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, category, origin, ingredient]);
-
+  }, [query, category, origin, ingredient, areaAliases]);
 
   function clearFilters() {
     setQuery("");
@@ -104,6 +144,13 @@ export default function SearchPage() {
     setIngredient("");
     setResults([]);
     setSearched(false);
+  }
+
+  function coincideOrigen(strArea, origenSeleccionado) {
+    if (!strArea) return false;
+    if (strArea === origenSeleccionado) return true;
+    const alias = areaAliases[origenSeleccionado] || [];
+    return alias.includes(strArea);
   }
 
   async function handleSearch() {
@@ -117,15 +164,33 @@ export default function SearchPage() {
       if (query.trim()) {
         meals = await searchMealsByName(query.trim());
         if (category !== "Todas") meals = meals.filter((m) => m.strCategory === category);
-        if (origin !== "Todos") meals = meals.filter((m) => m.strArea === origin);
+        if (origin !== "Todos") meals = meals.filter((m) => coincideOrigen(m.strArea, origin));
       } else if (ingredient.trim()) {
         meals = await filterMealsByIngredient(ingredient.trim());
       } else if (category !== "Todas") {
         meals = await filterMealsByCategory(category);
         meals = meals.map((m) => ({ ...m, strCategory: category }));
       } else if (origin !== "Todos") {
-        meals = await filterMealsByArea(origin);
-        meals = meals.map((m) => ({ ...m, strArea: origin }));
+        // Probamos con el gentilicio seleccionado y, si existen, con sus alias
+        // (nombres de país reales), armados automáticamente desde list.php?a=list.
+        const variantes = [origin, ...(areaAliases[origin] || [])];
+        const resultadosPorVariante = await Promise.all(
+          variantes.map((v) =>
+            filterMealsByArea(v).catch((err) => {
+              console.error(`Error al buscar el origen "${v}":`, err.message);
+              return [];
+            })
+          )
+        );
+
+        const vistos = new Set();
+        meals = resultadosPorVariante.flat().filter((m) => {
+          if (vistos.has(m.idMeal)) return false;
+          vistos.add(m.idMeal);
+          return true;
+        });
+
+        meals = meals.map((m) => ({ ...m, strArea: m.strArea || origin }));
       } else {
         meals = [];
       }
@@ -159,6 +224,7 @@ export default function SearchPage() {
 
   const mapped = results.map((m) => mapMeal(m, favorites));
   const visible = mapped.slice(0, visibleCount);
+    const mappedRandom = randomMeals.map((m) => mapMeal(m, favorites));
 
   return (
     <div className="search-page">
@@ -287,11 +353,33 @@ export default function SearchPage() {
             </div>
           )}
 
-          {!searched && !loading && (
-            <div className="empty-state" role="status">
-              <p className="empty-state-title">Elegí un filtro y presioná Buscar</p>
-              <p className="empty-state-subtitle">Podés buscar por nombre, categoría, origen o ingrediente.</p>
-            </div>
+                    {!searched && (
+            <>
+              <div className="results-header">
+                <p className="results-count">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M11 20A7 7 0 0118 7a7 7 0 01-7 13z" /><path d="M11 20c0-5.523 4.477-10 10-10" />
+                  </svg>
+                  <span>Algunas ideas para inspirarte</span>
+                </p>
+              </div>
+
+              {loadingRandom && <p>Cargando sugerencias...</p>}
+
+              {!loadingRandom && mappedRandom.length > 0 && (
+                <div className="results-grid">
+                  {mappedRandom.map((recipe) => (
+                    <RecipeCard
+                      key={recipe.id}
+                      recipe={recipe}
+                      variant="grid"
+                      onFavoriteToggle={toggleFavorite}
+                      onClick={(r) => navigate(`/detalle/${r.id}`)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>
