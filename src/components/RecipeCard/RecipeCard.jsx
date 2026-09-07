@@ -69,6 +69,11 @@ export default function RecipeCard({ recipe, variant = "grid", onFavoriteToggle,
     <article className={`recipe-card recipe-card--${variant}`} onClick={() => onClick?.(recipe)}>
       <div className="recipe-card-img-wrap">
         <img src={recipe.image} alt={recipe.title} loading="lazy" className="recipe-card-img" />
+        {recipe.prioridad && (
+          <span className="recipe-card-priority" aria-label={`Prioridad ${recipe.prioridad}`}>
+            {recipe.prioridad}
+          </span>
+        )}
         <button
           className="recipe-card-fav"
           onClick={(e) => { e.stopPropagation(); onFavoriteToggle?.(recipe.id); }}

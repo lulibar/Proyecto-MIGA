@@ -1,21 +1,25 @@
-// Recibe los datos del formulario y devuelve un objeto con los errores encontrados.
-// Si el objeto devuelto está vacío ({}), significa que no hay errores.
-export function validateWishlistForm({ nombre, email, mensaje }) {
-    const errores = {};
+export function validateWishlistForm({ cantidad, categoria, nota }, maxPrioridad) {
+  const errores = {};
 
-    if (!nombre || nombre.trim() === "") {
-        errores.nombre = "El nombre es obligatorio.";
-    }
+  if (cantidad === "" || cantidad === null || cantidad === undefined) {
+    errores.cantidad = "La prioridad es obligatoria.";
+  } else if (
+    isNaN(Number(cantidad)) ||
+    !Number.isInteger(Number(cantidad)) ||
+    Number(cantidad) <= 0
+  ) {
+    errores.cantidad = "La prioridad debe ser un número entero mayor a 0.";
+  } else if (maxPrioridad && Number(cantidad) > maxPrioridad) {
+    errores.cantidad = `La prioridad no puede ser mayor a ${maxPrioridad}.`;
+  }
 
-    // Regex simple para validar formato de email: algo@algo.algo
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
-        errores.email = "Ingresá un email válido.";
-    }
+  if (!categoria || categoria.trim() === "") {
+    errores.categoria = "La categoría o etiqueta es obligatoria.";
+  }
 
-    if (mensaje && mensaje.length > 300) {
-        errores.mensaje = "El mensaje no puede superar los 300 caracteres.";
-    }
+  if (nota && nota.length > 300) {
+    errores.nota = "La nota no puede superar los 300 caracteres.";
+  }
 
-    return errores;
+  return errores;
 }

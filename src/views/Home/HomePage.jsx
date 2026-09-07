@@ -4,6 +4,7 @@ import "./HomePage.css";
 import RecipeCard from "../../components/RecipeCard/RecipeCard";
 import { getRandomMeals, getCategories } from "../../services/api";
 import { getWishlist, addToWishlist, removeFromWishlist } from "../../utils/storage";
+import WishlistFormModal from "../../components/WishlistFormModal/WishlistFormModal";
 
 const heroSlides = [
   {
@@ -45,6 +46,7 @@ export default function Home() {
   const [favorites, setFavorites] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [mealParaGuardar, setMealParaGuardar] = useState(null);
 
   useEffect(() => {
     const wishlistIds = new Set(getWishlist().map((item) => item.idMeal));
@@ -82,9 +84,19 @@ export default function Home() {
         return next;
       });
     } else {
-      addToWishlist(meal, {});
-      setFavorites((prev) => new Set(prev).add(id));
+      setMealParaGuardar(meal);
     }
+  }
+
+  function confirmarGuardado(formData) {
+    if (!mealParaGuardar) return;
+    addToWishlist(mealParaGuardar, formData);
+    setFavorites((prev) => new Set(prev).add(mealParaGuardar.idMeal));
+    setMealParaGuardar(null);
+  }
+
+  function cancelarGuardado() {
+    setMealParaGuardar(null);
   }
 
   const featuredRecipes = featuredMeals.map((m) => mapMeal(m, favorites));
@@ -217,6 +229,14 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {mealParaGuardar && (
+        <WishlistFormModal
+          meal={mealParaGuardar}
+          onConfirm={confirmarGuardado}
+          onCancel={cancelarGuardado}
+        />
+      )}
     </>
   );
 }

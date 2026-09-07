@@ -1,0 +1,63 @@
+.comercios-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.comercios-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  color: var(--color-terracota);
+}
+
+.comercios-title {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  color: var(--color-text);
+}
+
+.comercios-cta {
+  background: var(--color-cream-dark);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: center;
+}
+
+.comercios-cta p {
+  color: var(--color-text-secondary);
+  margin-bottom: 12px;
+}
+
+.comercios-btn {
+  background: var(--color-terracota);
+  color: var(--color-white);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+
+.comercios-btn:hover {
+  background: var(--color-terracota-dark);
+}
+
+.comercios-error {
+  color: var(--color-terracota-dark);
+}
+
+.comercios-empty {
+  color: var(--color-text-muted);
+}
+
+.comercios-map-container {
+  width: 100%;
+  height: 300px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.comercios-map-container .leaflet-container {
+  height: 100%;
+  width: 100%;
+}

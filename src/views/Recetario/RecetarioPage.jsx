@@ -13,7 +13,23 @@ function mapWishlistItem(item) {
     category: item.strCategory,
     origin: item.strArea,
     isFavorite: true,
+    prioridad: item.consulta?.cantidad,
+    etiqueta: item.consulta?.categoria || "Sin categoría",
   };
+}
+
+function agruparPorEtiqueta(items) {
+  const grupos = {};
+  items.forEach((item) => {
+    if (!grupos[item.etiqueta]) grupos[item.etiqueta] = [];
+    grupos[item.etiqueta].push(item);
+  });
+
+  Object.keys(grupos).forEach((etiqueta) => {
+    grupos[etiqueta].sort((a, b) => (a.prioridad ?? 999) - (b.prioridad ?? 999));
+  });
+
+  return grupos;
 }
 
 export default function RecetarioPage() {
@@ -26,6 +42,8 @@ export default function RecetarioPage() {
   }
 
   const saved = wishlist.map(mapWishlistItem);
+  const grupos = agruparPorEtiqueta(saved);
+  const etiquetas = Object.keys(grupos);
 
   return (
     <div className="recetario-page">
@@ -36,25 +54,29 @@ export default function RecetarioPage() {
         />
 
         {saved.length > 0 ? (
-          <section aria-labelledby="recetario-heading">
-            <p className="recetario-count" id="recetario-heading">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
-              </svg>
-              <span>{saved.length} receta{saved.length !== 1 ? "s" : ""} guardada{saved.length !== 1 ? "s" : ""}</span>
-            </p>
-            <div className="recetario-grid">
-              {saved.map((recipe) => (
-                <RecipeCard
-                  key={recipe.id}
-                  recipe={recipe}
-                  variant="grid"
-                  onFavoriteToggle={handleRemove}
-                  onClick={(r) => navigate(`/detalle/${r.id}`)}
-                />
-              ))}
-            </div>
-          </section>
+          etiquetas.map((etiqueta) => (
+            <section key={etiqueta} aria-labelledby={`grupo-${etiqueta}`} style={{ marginBottom: "32px" }}>
+              <p className="recetario-count" id={`grupo-${etiqueta}`}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+                </svg>
+                <span>
+                  {etiqueta} — {grupos[etiqueta].length} receta{grupos[etiqueta].length !== 1 ? "s" : ""}
+                </span>
+              </p>
+              <div className="recetario-grid">
+                {grupos[etiqueta].map((recipe) => (
+                  <RecipeCard
+                    key={recipe.id}
+                    recipe={recipe}
+                    variant="grid"
+                    onFavoriteToggle={handleRemove}
+                    onClick={(r) => navigate(`/detalle/${r.id}`)}
+                  />
+                ))}
+              </div>
+            </section>
+          ))
         ) : (
           <div className="recetario-empty" role="status">
             <div className="recetario-empty-icon" aria-hidden="true">

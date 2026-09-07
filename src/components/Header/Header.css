@@ -52,7 +52,10 @@
 }
 
 .logo-icon {
-  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 50%;
 }
 
 .logo-text {
