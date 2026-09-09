@@ -169,3 +169,20 @@
   color: var(--color-text-muted);
   flex-shrink: 0;
 }
+
+.recipe-card-priority {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--color-terracota);
+  color: var(--color-white);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  z-index: 2;
+}

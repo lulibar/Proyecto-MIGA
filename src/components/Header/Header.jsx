@@ -72,13 +72,7 @@ export default function Header() {
             </button>
           )}
           <div className="header-logo">
-            <svg className="logo-icon" width="36" height="36" viewBox="0 0 36 36" fill="none">
-              <circle cx="18" cy="18" r="18" fill="#FCEEE9" />
-              <path d="M11 20c0-3.866 3.134-7 7-7s7 3.134 7 7v1H11v-1z" fill="#C65D3A" />
-              <circle cx="18" cy="13" r="3" fill="#C65D3A" />
-              <path d="M14 21h8v1a1 1 0 01-1 1h-6a1 1 0 01-1-1v-1z" fill="#9E4028" />
-              <rect x="16" y="6" width="4" height="2" rx="1" fill="#C65D3A" />
-            </svg>
+            <img src="/Logo_MIGA.png" alt="Logo de MIGA" className="logo-icon" />
             <div className="logo-text">
               <span className="logo-name">MIGA</span>
               <span className="logo-tagline">Descubrí algo rico para cocinar hoy</span>

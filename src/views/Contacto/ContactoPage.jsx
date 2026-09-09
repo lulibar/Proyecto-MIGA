@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "./ContactoPage.css";
 import PageHeader from "../../components/PageHeader/PageHeader";
+import "../../utils/leafletIconFix";
 
 const subjectOptions = [
   "¿En qué podemos ayudarte?",
@@ -12,6 +14,7 @@ const subjectOptions = [
 ];
 
 const MAX_MENSAJE = 500;
+const CATEDRAL_COORDS = [-34.9215, -57.9536];
 
 function validate(form) {
   const errors = {};
@@ -122,6 +125,37 @@ export default function ContactoPage() {
                   </div>
                 </li>
               </ul>
+            </section>
+
+            <section className="contacto-card" aria-labelledby="location-heading">
+              <h2 className="contacto-card-title" id="location-heading">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                Nuestra ubicación
+              </h2>
+              <div className="location-section">
+                <p className="location-address">
+                  Catedral de La Plata, La Plata, Buenos Aires, Argentina
+                </p>
+                <div className="map-container">
+                  <MapContainer
+                    center={CATEDRAL_COORDS}
+                    zoom={16}
+                    scrollWheelZoom={false}
+                    style={{ height: "100%", width: "100%" }}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <Marker position={CATEDRAL_COORDS}>
+                      <Popup>Catedral de La Plata — Nuestra oficina</Popup>
+                    </Marker>
+                  </MapContainer>
+                </div>
+              </div>
             </section>
 
             <section className="contacto-card" aria-labelledby="social-heading">

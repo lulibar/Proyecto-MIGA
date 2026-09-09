@@ -13,6 +13,7 @@ import {
   getRandomMeals,
 } from "../../services/api";
 import { getWishlist, addToWishlist, removeFromWishlist } from "../../utils/storage";
+import WishlistFormModal from "../../components/WishlistFormModal/WishlistFormModal";
 
 const PAGE_SIZE = 10;
 
@@ -72,12 +73,13 @@ function mapMeal(meal, favoritesIds) {
 
 export default function SearchPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("Todas");
-  const [origin, setOrigin] = useState("Todos");
-  const [ingredient, setIngredient] = useState("");
+  // Los filtros arrancan leyendo la URL, no siempre en blanco
+  const [query, setQuery] = useState(searchParams.get("query") || "");
+  const [category, setCategory] = useState(searchParams.get("categoria") || "Todas");
+  const [origin, setOrigin] = useState(searchParams.get("origen") || "Todos");
+  const [ingredient, setIngredient] = useState(searchParams.get("ingrediente") || "");
 
   const [categoryOptions, setCategoryOptions] = useState(["Todas"]);
   const [originOptions, setOriginOptions] = useState(["Todos"]);
@@ -89,16 +91,19 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searched, setSearched] = useState(false);
+<<<<<<< HEAD
   const [randomMeals, setRandomMeals] = useState([]);
   const [loadingRandom, setLoadingRandom] = useState(true);
+=======
+  const [mealParaGuardar, setMealParaGuardar] = useState(null);
+>>>>>>> c4bef5d361ad1c64f27344065ad1add54d74a6be
 
-    useEffect(() => {
+  useEffect(() => {
     setFavorites(new Set(getWishlist().map((item) => item.idMeal)));
-
-    const categoriaDesdeUrl = searchParams.get("categoria");
 
     Promise.all([getCategories(), getAreas()])
       .then(([cats, areas]) => {
+<<<<<<< HEAD
         const catNames = quitarDuplicados(cats.map((c) => c.strCategory));
         const areaNames = quitarDuplicados(areas.map((a) => a.strArea));
 
@@ -119,6 +124,25 @@ export default function SearchPage() {
       })
       .catch(() => setLoadingRandom(false));
   }, [searchParams]);
+=======
+        setCategoryOptions(["Todas", ...cats.map((c) => c.strCategory)]);
+        setOriginOptions(["Todos", ...areas.map((a) => a.strArea)]);
+      })
+      .catch((err) => setError(err.message));
+  }, []);
+
+  // Mantiene la URL sincronizada con los filtros actuales,
+  // así "Atrás" desde Detalle vuelve a esta misma búsqueda.
+  useEffect(() => {
+    const params = {};
+    if (query.trim()) params.query = query;
+    if (category !== "Todas") params.categoria = category;
+    if (origin !== "Todos") params.origen = origin;
+    if (ingredient.trim()) params.ingrediente = ingredient;
+    setSearchParams(params, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, category, origin, ingredient]);
+>>>>>>> c4bef5d361ad1c64f27344065ad1add54d74a6be
 
   useEffect(() => {
     const hayAlgunFiltro = query.trim() || ingredient.trim() || category !== "Todas" || origin !== "Todos";
@@ -217,9 +241,19 @@ export default function SearchPage() {
         return next;
       });
     } else {
-      addToWishlist(meal, {});
-      setFavorites((prev) => new Set(prev).add(id));
+      setMealParaGuardar(meal);
     }
+  }
+
+  function confirmarGuardado(formData) {
+    if (!mealParaGuardar) return;
+    addToWishlist(mealParaGuardar, formData);
+    setFavorites((prev) => new Set(prev).add(mealParaGuardar.idMeal));
+    setMealParaGuardar(null);
+  }
+
+  function cancelarGuardado() {
+    setMealParaGuardar(null);
   }
 
   const mapped = results.map((m) => mapMeal(m, favorites));
@@ -383,6 +417,14 @@ export default function SearchPage() {
           )}
         </section>
       </div>
+
+      {mealParaGuardar && (
+        <WishlistFormModal
+          meal={mealParaGuardar}
+          onConfirm={confirmarGuardado}
+          onCancel={cancelarGuardado}
+        />
+      )}
     </div>
   );
 }
