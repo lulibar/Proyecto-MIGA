@@ -85,35 +85,29 @@ export default function SearchPage() {
   const [originOptions, setOriginOptions] = useState(["Todos"]);
   const [areaAliases, setAreaAliases] = useState({});
 
-    const [results, setResults] = useState([]);
+  const [results, setResults] = useState([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [favorites, setFavorites] = useState(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searched, setSearched] = useState(false);
-<<<<<<< HEAD
   const [randomMeals, setRandomMeals] = useState([]);
   const [loadingRandom, setLoadingRandom] = useState(true);
-=======
   const [mealParaGuardar, setMealParaGuardar] = useState(null);
->>>>>>> c4bef5d361ad1c64f27344065ad1add54d74a6be
 
+  // Carga inicial: favoritos, categorías/orígenes (con alias y sin duplicados),
+  // y las recetas aleatorias que se muestran antes de la primera búsqueda.
   useEffect(() => {
     setFavorites(new Set(getWishlist().map((item) => item.idMeal)));
 
     Promise.all([getCategories(), getAreas()])
       .then(([cats, areas]) => {
-<<<<<<< HEAD
         const catNames = quitarDuplicados(cats.map((c) => c.strCategory));
         const areaNames = quitarDuplicados(areas.map((a) => a.strArea));
 
         setCategoryOptions(["Todas", ...catNames]);
         setOriginOptions(["Todos", ...areaNames]);
         setAreaAliases(construirAliasDeAreas(areas));
-
-        if (categoriaDesdeUrl) {
-          setCategory(categoriaDesdeUrl);
-        }
       })
       .catch((err) => setError(err.message));
 
@@ -123,12 +117,6 @@ export default function SearchPage() {
         setLoadingRandom(false);
       })
       .catch(() => setLoadingRandom(false));
-  }, [searchParams]);
-=======
-        setCategoryOptions(["Todas", ...cats.map((c) => c.strCategory)]);
-        setOriginOptions(["Todos", ...areas.map((a) => a.strArea)]);
-      })
-      .catch((err) => setError(err.message));
   }, []);
 
   // Mantiene la URL sincronizada con los filtros actuales,
@@ -142,7 +130,6 @@ export default function SearchPage() {
     setSearchParams(params, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, category, origin, ingredient]);
->>>>>>> c4bef5d361ad1c64f27344065ad1add54d74a6be
 
   useEffect(() => {
     const hayAlgunFiltro = query.trim() || ingredient.trim() || category !== "Todas" || origin !== "Todos";
@@ -258,7 +245,7 @@ export default function SearchPage() {
 
   const mapped = results.map((m) => mapMeal(m, favorites));
   const visible = mapped.slice(0, visibleCount);
-    const mappedRandom = randomMeals.map((m) => mapMeal(m, favorites));
+  const mappedRandom = randomMeals.map((m) => mapMeal(m, favorites));
 
   return (
     <div className="search-page">
@@ -387,7 +374,7 @@ export default function SearchPage() {
             </div>
           )}
 
-                    {!searched && (
+          {!searched && (
             <>
               <div className="results-header">
                 <p className="results-count">
