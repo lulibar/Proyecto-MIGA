@@ -444,6 +444,28 @@
   font-size: 22px;
 }
 
+.recipe-nota-personal {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--color-cream-dark);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-top: 16px;
+  color: var(--color-text-secondary);
+}
+
+.recipe-nota-personal svg {
+  flex-shrink: 0;
+  color: var(--color-terracota);
+  margin-top: 2px;
+}
+
+.recipe-nota-personal p {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 /* Desktop layout */
 @media (min-width: 768px) {
   .recipe-hero {

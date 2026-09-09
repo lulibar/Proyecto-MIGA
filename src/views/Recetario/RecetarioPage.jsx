@@ -86,7 +86,7 @@ export default function RecetarioPage() {
             </div>
             <h2 className="recetario-empty-title">Tu recetario está vacío</h2>
             <p className="recetario-empty-subtitle">
-              Guardá tus recetas favoritas para tenerlas siempre a mano. Tocá el corazón en cualquier receta para agregarla.
+              Guardá tus recetas favoritas para tenerlas siempre a mano. 
             </p>
           </div>
         )}

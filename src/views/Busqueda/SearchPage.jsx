@@ -17,14 +17,11 @@ import WishlistFormModal from "../../components/WishlistFormModal/WishlistFormMo
 
 const PAGE_SIZE = 10;
 
-// Saca duplicados de una lista de strings.
 function quitarDuplicados(lista) {
   return [...new Set(lista)];
 }
 
-// Arma un diccionario de alias automático: para cada gentilicio (strArea),
-// guarda el/los nombre/s real/es de país (strCountry) que lo comparten.
-// Esto cubre TODOS los países sin que tengamos que anotarlos a mano uno por uno.
+
 function construirAliasDeAreas(areas) {
   const mapa = {};
 
@@ -75,7 +72,6 @@ export default function SearchPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Los filtros arrancan leyendo la URL, no siempre en blanco
   const [query, setQuery] = useState(searchParams.get("query") || "");
   const [category, setCategory] = useState(searchParams.get("categoria") || "Todas");
   const [origin, setOrigin] = useState(searchParams.get("origen") || "Todos");
@@ -95,8 +91,7 @@ export default function SearchPage() {
   const [loadingRandom, setLoadingRandom] = useState(true);
   const [mealParaGuardar, setMealParaGuardar] = useState(null);
 
-  // Carga inicial: favoritos, categorías/orígenes (con alias y sin duplicados),
-  // y las recetas aleatorias que se muestran antes de la primera búsqueda.
+
   useEffect(() => {
     setFavorites(new Set(getWishlist().map((item) => item.idMeal)));
 
@@ -119,8 +114,6 @@ export default function SearchPage() {
       .catch(() => setLoadingRandom(false));
   }, []);
 
-  // Mantiene la URL sincronizada con los filtros actuales,
-  // así "Atrás" desde Detalle vuelve a esta misma búsqueda.
   useEffect(() => {
     const params = {};
     if (query.trim()) params.query = query;
@@ -128,7 +121,6 @@ export default function SearchPage() {
     if (origin !== "Todos") params.origen = origin;
     if (ingredient.trim()) params.ingrediente = ingredient;
     setSearchParams(params, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, category, origin, ingredient]);
 
   useEffect(() => {
@@ -145,7 +137,6 @@ export default function SearchPage() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, category, origin, ingredient, areaAliases]);
 
   function clearFilters() {
@@ -164,73 +155,90 @@ export default function SearchPage() {
     return alias.includes(strArea);
   }
 
-  async function handleSearch() {
-    setLoading(true);
-    setError(null);
-    setSearched(true);
+ async function handleSearch() {
+  setLoading(true);
+  setError(null);
+  setSearched(true);
 
-    try {
-      let meals = [];
+  try {
+    let meals = [];
 
-      if (query.trim()) {
-        meals = await searchMealsByName(query.trim());
-        if (category !== "Todas") meals = meals.filter((m) => m.strCategory === category);
-        if (origin !== "Todos") meals = meals.filter((m) => coincideOrigen(m.strArea, origin));
-      } else if (ingredient.trim()) {
-        meals = await filterMealsByIngredient(ingredient.trim());
-      } else if (category !== "Todas") {
-        meals = await filterMealsByCategory(category);
-        meals = meals.map((m) => ({ ...m, strCategory: category }));
-      } else if (origin !== "Todos") {
-        // Probamos con el gentilicio seleccionado y, si existen, con sus alias
-        // (nombres de país reales), armados automáticamente desde list.php?a=list.
-        const variantes = [origin, ...(areaAliases[origin] || [])];
-        const resultadosPorVariante = await Promise.all(
-          variantes.map((v) =>
-            filterMealsByArea(v).catch((err) => {
-              console.error(`Error al buscar el origen "${v}":`, err.message);
-              return [];
-            })
-          )
-        );
+    if (query.trim()) {
+      meals = await searchMealsByName(query.trim());
+      if (category !== "Todas") meals = meals.filter((m) => m.strCategory === category);
+      if (origin !== "Todos") meals = meals.filter((m) => coincideOrigen(m.strArea, origin));
+    } else if (ingredient.trim()) {
+      meals = await filterMealsByIngredient(ingredient.trim());
+    } else if (category !== "Todas" && origin !== "Todos") {
 
-        const vistos = new Set();
-        meals = resultadosPorVariante.flat().filter((m) => {
-          if (vistos.has(m.idMeal)) return false;
-          vistos.add(m.idMeal);
-          return true;
-        });
+      const variantes = [origin, ...(areaAliases[origin] || [])];
 
-        meals = meals.map((m) => ({ ...m, strArea: m.strArea || origin }));
-      } else {
-        meals = [];
-      }
+      const [categoryResults, ...originResultsPorVariante] = await Promise.all([
+        filterMealsByCategory(category),
+        ...variantes.map((v) =>
+          filterMealsByArea(v).catch((err) => {
+            console.error(`Error al buscar el origen "${v}":`, err.message);
+            return [];
+          })
+        ),
+      ]);
 
-      setResults(meals);
-      setVisibleCount(PAGE_SIZE);
-    } catch (err) {
-      setError(err.message);
-      setResults([]);
-    } finally {
-      setLoading(false);
+      const idsDelOrigen = new Set(originResultsPorVariante.flat().map((m) => m.idMeal));
+
+      meals = categoryResults
+        .filter((m) => idsDelOrigen.has(m.idMeal))
+        .map((m) => ({ ...m, strCategory: category, strArea: origin }));
+    } else if (category !== "Todas") {
+      meals = await filterMealsByCategory(category);
+      meals = meals.map((m) => ({ ...m, strCategory: category }));
+    } else if (origin !== "Todos") {
+      const variantes = [origin, ...(areaAliases[origin] || [])];
+      const resultadosPorVariante = await Promise.all(
+        variantes.map((v) =>
+          filterMealsByArea(v).catch((err) => {
+            console.error(`Error al buscar el origen "${v}":`, err.message);
+            return [];
+          })
+        )
+      );
+
+      const vistos = new Set();
+      meals = resultadosPorVariante.flat().filter((m) => {
+        if (vistos.has(m.idMeal)) return false;
+        vistos.add(m.idMeal);
+        return true;
+      });
+
+      meals = meals.map((m) => ({ ...m, strArea: m.strArea || origin }));
+    } else {
+      meals = [];
     }
+
+    setResults(meals);
+    setVisibleCount(PAGE_SIZE);
+  } catch (err) {
+    setError(err.message);
+    setResults([]);
+  } finally {
+    setLoading(false);
   }
+}
 
   function toggleFavorite(id) {
-    const meal = results.find((m) => m.idMeal === id);
-    if (!meal) return;
+  const meal = results.find((m) => m.idMeal === id) || randomMeals.find((m) => m.idMeal === id);
+  if (!meal) return;
 
-    if (favorites.has(id)) {
-      removeFromWishlist(id);
-      setFavorites((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    } else {
-      setMealParaGuardar(meal);
-    }
+  if (favorites.has(id)) {
+    removeFromWishlist(id);
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  } else {
+    setMealParaGuardar(meal);
   }
+}
 
   function confirmarGuardado(formData) {
     if (!mealParaGuardar) return;

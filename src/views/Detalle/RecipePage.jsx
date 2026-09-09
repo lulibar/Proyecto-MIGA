@@ -6,7 +6,6 @@ import { getWishlist, addToWishlist, removeFromWishlist, addToHistory } from "..
 import WishlistFormModal from "../../components/WishlistFormModal/WishlistFormModal";
 import ComerciosCercanos from "../../components/ComerciosCercanos/ComerciosCercanos";
 
-
 function categoryColor() {
   return { bg: "#FCEEE9", color: "#C65D3A" };
 }
@@ -47,6 +46,7 @@ export default function RecipePage() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("ingredientes");
   const [isFavorite, setIsFavorite] = useState(false);
+  const [itemGuardado, setItemGuardado] = useState(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
   useEffect(() => {
@@ -67,7 +67,9 @@ export default function RecipePage() {
   useEffect(() => {
     if (!meal) return;
     const wishlist = getWishlist();
-    setIsFavorite(wishlist.some((item) => item.idMeal === meal.idMeal));
+    const encontrado = wishlist.find((item) => item.idMeal === meal.idMeal);
+    setIsFavorite(!!encontrado);
+    setItemGuardado(encontrado || null);
   }, [meal]);
 
   useEffect(() => {
@@ -81,6 +83,7 @@ export default function RecipePage() {
     if (isFavorite) {
       removeFromWishlist(meal.idMeal);
       setIsFavorite(false);
+      setItemGuardado(null);
     } else {
       setMostrarFormulario(true);
     }
@@ -89,6 +92,7 @@ export default function RecipePage() {
   function confirmarGuardado(formData) {
     addToWishlist(meal, formData);
     setIsFavorite(true);
+    setItemGuardado({ ...meal, consulta: formData });
     setMostrarFormulario(false);
   }
 
@@ -124,6 +128,7 @@ export default function RecipePage() {
   const ingredientes = extraerIngredientes(meal);
   const pasos = extraerPasos(meal);
   const youtubeId = extraerYoutubeId(meal.strYoutube);
+  const nota = itemGuardado?.consulta?.nota;
 
   const tabs = [
     {
@@ -157,7 +162,7 @@ export default function RecipePage() {
                 aria-label={isFavorite ? "Quitar de favoritos" : "Guardar en favoritos"}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill={isFavorite ? "#C65D3A" : "none"} stroke="#C65D3A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
                 </svg>
               </button>
             </div>
@@ -179,14 +184,17 @@ export default function RecipePage() {
                 </svg>
                 {isFavorite ? "Guardada" : "Guardar receta"}
               </button>
-              <button className="recipe-share-btn">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
-                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                </svg>
-                Compartir
-              </button>
             </div>
+
+            {nota && (
+              <div className="recipe-nota-personal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                  <path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z" />
+                </svg>
+                <p>{nota}</p>
+              </div>
+            )}
           </div>
         </section>
 
@@ -225,10 +233,11 @@ export default function RecipePage() {
                     </li>
                   ))}
                 </ul>
+
+                <ComerciosCercanos strCategory={meal.strCategory} />
               </section>
             )}
 
-            <ComerciosCercanos strCategory={meal.strCategory} />
             {activeTab === "preparacion" && (
               <section aria-labelledby="prep-heading">
                 <div className="preparation-title-row">
